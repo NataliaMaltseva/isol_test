@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres
+    restart: always
+    environment: 
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=dj_inter*7
+      - POSTGRES_DB=isoldb_test
+      - DATABASE_HOST=127.0.0.1
+    ports: 
+      - "5434:5434"
+    expose:
+      - "5434"
+    volumes: 
+       - ./isol_db/build/docker_postgres_init.sql:/docker-entrypoint-initdb.d/docker_postgres_init.sql
+    networks:
+      - postgres
+    command: -p 5434
+
+  pgadmin-compose:
+    image: dpage/pgadmin4
+    environment: 
+      PGADMIN_DEFAULT_EMAIL: "test@gmail.com"
+      PGADMIN_DEFAULT_PASSWORD: "test123!"
+    ports: 
+      - "16545:80"
+    depends_on: 
+      - postgres
+
+  yolov4:
+    build: ./yolov4/build/
+    environment:
+      - DISPLAY=unix$DISPLAY
+    volumes:
+      - ./yolov4/app:/app/
+      - ./:/webcam
+      - /dev/video0:/dev/video0
+      - /tmp/.X11-unix:/tmp/.X11-unix
+  
+    command: python3 /app/main.py
+
+    devices:
+      - /dev/video0:/dev/video0
+
+    depends_on: 
+      - postgres
+
+    networks:
+      - postgres    
+
+networks:
+  postgres:
+    driver: bridge
+
